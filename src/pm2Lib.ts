@@ -16,9 +16,15 @@ export interface IProcessOutLog {
   };
 }
 
+export interface Container {
+  id: string;
+  enabled: boolean;
+  status: string;
+}
+
 class Pm2Lib {
   private readonly SCRIPT_PATH = "C:/Users/rlpro/dev/pm2/ts-pm2-ui/src/";
-  private readonly MINERS = ['miner01.js'];//, 'miner02.js'];
+  private readonly MINERS = ['miner01.js', 'miner02.js'];
 
   private bus: EventEmitter | undefined;
 
@@ -49,25 +55,73 @@ class Pm2Lib {
             onLog(procLog);
         });
     }
-  async startProcess(filename: string): Promise<Proc> {
-    const proc = this.getStartOptions(filename);
-    const configFile = 'src/aplications.json';
-    let fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-    /* if(fileData.enabled){
-      return promisify<StartOptions, Proc>(pm2.start).call(pm2, proc);
-    }
-    else{
-      return promisify(pm2.stop).call(pm2, filename);
-    } */
-    return promisify<StartOptions, Proc>(pm2.start).call(pm2, proc);
+    async startProcess(id: string): Promise<Proc> {
+      const proc = this.getStartOptions(id);
+      const configFile = 'src/containers.json';
+      try {
+          // Carga el archivo JSON y conviértelo en un array de objetos Container
+          let fileData: { containers: Container[] } = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+  
+          // Verifica si el ID ya existe en la lista de contenedores
+          const existingContainerIndex = fileData.containers.findIndex(container => container.id === id);
+  
+          // Si el ID ya existe, no hagas ninguna escritura adicional y devuelve el resultado de pm2.start
+          if (existingContainerIndex !== -1) {
+              console.log('El ID ya existe en la lista de contenedores. No se realizaron cambios.');
+              return promisify<StartOptions, Proc>(pm2.start).call(pm2, proc);
+          }
+          
+          // El ID no existe en la lista, agrégalo
+          fileData.containers.push({ id, enabled: false, status: "online" }); // O establece el valor según tus necesidades
+  
+          // Guarda los cambios de vuelta al archivo JSON
+          fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
+          console.log('Configuración de contenedores actualizada correctamente.');
+  
+          // Procede a iniciar el proceso
+          return promisify<StartOptions, Proc>(pm2.start).call(pm2, proc);
+      } catch (error) {
+          console.error('Error al actualizar la configuración de contenedores:', error);
+          // Maneja el error según tus necesidades
+          throw error;
+      }
   }
-
+  
   async restartProcess(filename: string): Promise<Proc> {
     return promisify(pm2.restart).call(pm2, filename);
   }
 
   async stopProcess(filename: string): Promise<Proc> {
-    return promisify(pm2.stop).call(pm2, filename);
+    const proc = this.getStartOptions(filename);
+      const configFile = 'src/containers.json';
+      try {
+          // Carga el archivo JSON y conviértelo en un array de objetos Container
+          let fileData: { containers: Container[] } = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+  
+          // Verifica si el ID ya existe en la lista de contenedores
+          const existingContainerIndex = fileData.containers.findIndex(container => container.id === filename);
+  
+          // Si el ID ya existe, no hagas ninguna escritura adicional y devuelve el resultado de pm2.start
+          if (existingContainerIndex !== -1) {
+              console.log('El ID ya existe en la lista de contenedores. No se realizaron cambios.');
+              return promisify(pm2.stop).call(pm2, filename);
+          }
+          const id = filename;
+          // El ID no existe en la lista, agrégalo
+          fileData.containers.push({ id, enabled: false, status: "stopped" }); // O establece el valor según tus necesidades
+  
+          // Guarda los cambios de vuelta al archivo JSON
+          fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
+          console.log('Configuración de contenedores actualizada correctamente.');
+  
+          // Procede a iniciar el proceso
+          return promisify(pm2.stop).call(pm2, filename);
+      } catch (error) {
+          console.error('Error al actualizar la configuración de contenedores:', error);
+          // Maneja el error según tus necesidades
+          throw error;
+      }
+    
   }
 
   private getStartOptions(filename: string): StartOptions {

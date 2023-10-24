@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -66,7 +77,7 @@ app.put('/miners/:filename/:action', function (req, res) { return __awaiter(void
             case 0:
                 _j.trys.push([0, 9, , 10]);
                 _a = req.params, filename = _a.filename, action = _a.action;
-                configFile = 'src/aplications.json';
+                configFile = 'src/containers.json';
                 fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
                 _b = action;
                 switch (_b) {
@@ -104,21 +115,28 @@ app.put('/miners/:filename/:action', function (req, res) { return __awaiter(void
     });
 }); });
 app.use(express.json());
-app.post('/setStoreEnable', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
-    var field, configFile, fileData;
+app.post('/setStoreEnable/', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var enabled, configFile, fileData;
     return __generator(this, function (_a) {
-        field = req.body;
-        if (field && field.enabled !== undefined) {
-            configFile = 'src/aplications.json';
-            fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-            fileData.enabled = field.enabled;
+        enabled = req.body.enabled;
+        configFile = 'src/containers.json';
+        if (enabled !== undefined) {
             try {
+                fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+                // Actualiza el campo 'enabled' de todos los contenedores
+                fileData.containers = fileData.containers.map(function (container) {
+                    return __assign(__assign({}, container), { enabled: enabled });
+                });
+                // Guarda los cambios de vuelta al archivo JSON
                 fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
+                console.log("Todos los contenedores han sido ".concat(enabled ? 'habilitados' : 'deshabilitados', " correctamente."));
                 res.status(200).send('Configuración guardada correctamente.');
             }
             catch (error) {
-                console.error('Error al escribir en el archivo:', error);
+                console.error('Error al actualizar la configuración de contenedores:', error);
                 res.status(500).send('Error interno del servidor al guardar la configuración.');
+                // Maneja el error según tus necesidades
+                throw error;
             }
         }
         else {
@@ -127,6 +145,144 @@ app.post('/setStoreEnable', function (req, res) { return __awaiter(void 0, void 
         return [2 /*return*/];
     });
 }); });
+app.post('/changeContainerEnable/:id', function (req, res) {
+    var id = req.params.id;
+    // leo el fichero
+    var configFile = 'src/containers.json';
+    var response = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+    var containerIndex = response.containers.findIndex(function (container) { return container.id === id; });
+    if (containerIndex !== -1) {
+        response.containers[containerIndex].enabled = !response.containers[containerIndex].enabled;
+        try {
+            fs.writeFileSync(configFile, JSON.stringify(response, null, 2));
+            res.status(200).send('Configuración guardada correctamente.');
+        }
+        catch (error) {
+            console.error('Error al escribir en el archivo:', error);
+            res.status(500).send('Error interno del servidor al guardar la configuración.');
+        }
+    }
+    else {
+        res.status(404).send('Contenedor no encontrado.');
+    }
+});
+app.get('/getStatus', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var procesos, statuses, error_2;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, pm2Lib_1.default.getProcesses()];
+            case 1:
+                procesos = _a.sent();
+                statuses = procesos.map(function (proc) {
+                    var _a;
+                    return ({
+                        status: (_a = proc.pm2_env) === null || _a === void 0 ? void 0 : _a.status
+                    });
+                });
+                res.json(statuses);
+                return [3 /*break*/, 3];
+            case 2:
+                error_2 = _a.sent();
+                console.error('Error al obtener procesos:', error_2);
+                res.status(500).json({ error: 'Error al obtener procesos.' });
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); });
+app.get('/getSatus/:id', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id, configFile, fileData, container;
+    return __generator(this, function (_a) {
+        id = req.params.id;
+        configFile = 'src/containers.json';
+        try {
+            fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+            container = fileData.containers.find(function (container) { return container.id === id; });
+            if (container) {
+                res.json(container.status);
+            }
+            else {
+                console.log("No se encontr\u00F3 un contenedor con el ID '".concat(id, "'."));
+                res.status(404).send('Estado no encontrado.');
+            }
+        }
+        catch (error) {
+            console.error('Error al leer el archivo de configuración:', error);
+            res.status(500).json({ error: 'Error al obtener procesos.' });
+        }
+        return [2 /*return*/];
+    });
+}); });
+app.get('/getSaved/:id', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var id, configFile, fileData, container;
+    return __generator(this, function (_a) {
+        id = req.params.id;
+        configFile = 'src/containers.json';
+        try {
+            fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+            container = fileData.containers.find(function (container) { return container.id === id; });
+            if (container) {
+                res.json(container.enabled);
+            }
+            else {
+                console.log("No se encontr\u00F3 un contenedor con el ID '".concat(id, "'."));
+                res.status(404).send('Estado no encontrado.');
+            }
+        }
+        catch (error) {
+            console.error('Error al leer el archivo de configuración:', error);
+            res.status(500).json({ error: 'Error al obtener procesos.' });
+        }
+        return [2 /*return*/];
+    });
+}); });
+app.get('/getEnableds', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var configFile, fileData, allEnabled;
+    return __generator(this, function (_a) {
+        configFile = 'src/containers.json';
+        try {
+            fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+            allEnabled = fileData.containers.every(function (container) { return container.enabled; });
+            res.json(allEnabled);
+            /* if(allEnabled) {
+              res.json(await pm2Lib.stopProcess(filename));
+            } */
+        }
+        catch (error) {
+            console.error('Error al leer el archivo de configuración:', error);
+            res.status(500).json({ error: 'Error al obtener enabled.' });
+        }
+        return [2 /*return*/];
+    });
+}); });
+app.post('/changeContainerState/:id', function (req, res) {
+    var id = req.params.id;
+    // leo el fichero
+    var configFile = 'src/containers.json';
+    var response = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+    var containerIndex = response.containers.findIndex(function (container) { return container.id === id; });
+    if (containerIndex !== -1) {
+        if (response.containers[containerIndex].status === 'online') {
+            response.containers[containerIndex].status = 'stopped';
+        }
+        else {
+            response.containers[containerIndex].status = 'online';
+        }
+        try {
+            fs.writeFileSync(configFile, JSON.stringify(response, null, 2));
+            res.status(200).send('Configuración guardada correctamente.');
+        }
+        catch (error) {
+            console.error('Error al escribir en el archivo:', error);
+            res.status(500).send('Error interno del servidor al guardar la configuración.');
+        }
+    }
+    else {
+        res.status(404).send('Contenedor no encontrado.');
+    }
+});
 var PORT = process.env.PORT || 3000;
 var httpServer = app.listen(PORT, function () {
     console.log("[Server] Listening on :".concat(PORT));

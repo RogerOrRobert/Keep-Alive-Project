@@ -1,0 +1,14 @@
+{
+  "containers": [
+    {
+      "id": "miner01.js",
+      "enabled": true,
+      "status": "stopped"
+    },
+    {
+      "id": "miner02.js",
+      "enabled": false,
+      "status": "stopped"
+    }
+  ]
+}

@@ -42,7 +42,7 @@ var fs = require('fs');
 var Pm2Lib = /** @class */ (function () {
     function Pm2Lib() {
         this.SCRIPT_PATH = "C:/Users/rlpro/dev/pm2/ts-pm2-ui/src/";
-        this.MINERS = ['miner01.js']; //, 'miner02.js'];
+        this.MINERS = ['miner01.js', 'miner02.js'];
     }
     Pm2Lib.prototype.getProcesses = function () {
         return __awaiter(this, void 0, void 0, function () {
@@ -100,20 +100,34 @@ var Pm2Lib = /** @class */ (function () {
             });
         });
     };
-    Pm2Lib.prototype.startProcess = function (filename) {
+    Pm2Lib.prototype.startProcess = function (id) {
         return __awaiter(this, void 0, void 0, function () {
-            var proc, configFile, fileData;
+            var proc, configFile, fileData, existingContainerIndex;
             return __generator(this, function (_a) {
-                proc = this.getStartOptions(filename);
-                configFile = 'src/aplications.json';
-                fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-                /* if(fileData.enabled){
-                  return promisify<StartOptions, Proc>(pm2.start).call(pm2, proc);
+                proc = this.getStartOptions(id);
+                configFile = 'src/containers.json';
+                try {
+                    fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+                    existingContainerIndex = fileData.containers.findIndex(function (container) { return container.id === id; });
+                    // Si el ID ya existe, no hagas ninguna escritura adicional y devuelve el resultado de pm2.start
+                    if (existingContainerIndex !== -1) {
+                        console.log('El ID ya existe en la lista de contenedores. No se realizaron cambios.');
+                        return [2 /*return*/, (0, util_1.promisify)(pm2.start).call(pm2, proc)];
+                    }
+                    // El ID no existe en la lista, agrégalo
+                    fileData.containers.push({ id: id, enabled: false, status: "online" }); // O establece el valor según tus necesidades
+                    // Guarda los cambios de vuelta al archivo JSON
+                    fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
+                    console.log('Configuración de contenedores actualizada correctamente.');
+                    // Procede a iniciar el proceso
+                    return [2 /*return*/, (0, util_1.promisify)(pm2.start).call(pm2, proc)];
                 }
-                else{
-                  return promisify(pm2.stop).call(pm2, filename);
-                } */
-                return [2 /*return*/, (0, util_1.promisify)(pm2.start).call(pm2, proc)];
+                catch (error) {
+                    console.error('Error al actualizar la configuración de contenedores:', error);
+                    // Maneja el error según tus necesidades
+                    throw error;
+                }
+                return [2 /*return*/];
             });
         });
     };
@@ -126,8 +140,33 @@ var Pm2Lib = /** @class */ (function () {
     };
     Pm2Lib.prototype.stopProcess = function (filename) {
         return __awaiter(this, void 0, void 0, function () {
+            var proc, configFile, fileData, existingContainerIndex, id;
             return __generator(this, function (_a) {
-                return [2 /*return*/, (0, util_1.promisify)(pm2.stop).call(pm2, filename)];
+                proc = this.getStartOptions(filename);
+                configFile = 'src/containers.json';
+                try {
+                    fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+                    existingContainerIndex = fileData.containers.findIndex(function (container) { return container.id === filename; });
+                    // Si el ID ya existe, no hagas ninguna escritura adicional y devuelve el resultado de pm2.start
+                    if (existingContainerIndex !== -1) {
+                        console.log('El ID ya existe en la lista de contenedores. No se realizaron cambios.');
+                        return [2 /*return*/, (0, util_1.promisify)(pm2.stop).call(pm2, filename)];
+                    }
+                    id = filename;
+                    // El ID no existe en la lista, agrégalo
+                    fileData.containers.push({ id: id, enabled: false, status: "stopped" }); // O establece el valor según tus necesidades
+                    // Guarda los cambios de vuelta al archivo JSON
+                    fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
+                    console.log('Configuración de contenedores actualizada correctamente.');
+                    // Procede a iniciar el proceso
+                    return [2 /*return*/, (0, util_1.promisify)(pm2.stop).call(pm2, filename)];
+                }
+                catch (error) {
+                    console.error('Error al actualizar la configuración de contenedores:', error);
+                    // Maneja el error según tus necesidades
+                    throw error;
+                }
+                return [2 /*return*/];
             });
         });
     };
