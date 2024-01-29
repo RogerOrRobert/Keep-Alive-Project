@@ -45,33 +45,33 @@ app.post('/setStoreEnable/', async (req, res) => {
   const configFile = 'src/containers.json';
   if (enabled !== undefined) {
     try {
-      // Carga el archivo JSON y conviértelo en un array de objetos Container
+      // Load the JSON file and convert it to an array of Container objects
       let fileData: { containers: Container[] } = JSON.parse(fs.readFileSync(configFile, 'utf8'));
 
-      // Actualiza el campo 'enabled' de todos los contenedores
+      // Update the 'enabled' field of all containers
       fileData.containers = fileData.containers.map(container => {
           return { ...container, enabled: enabled };
       });
 
-      // Guarda los cambios de vuelta al archivo JSON
+      // Save changes back to the JSON file
       fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
-      console.log(`Todos los contenedores han sido ${enabled ? 'habilitados' : 'deshabilitados'} correctamente.`);
-      res.status(200).send('Configuración guardada correctamente.');
+      console.log("All containers have been ", enabled ? 'enabled' : 'disabled', " successfully.");
+      res.status(200).send('Configuration saved successfully.');
     } catch (error) {
-      console.error('Error al actualizar la configuración de contenedores:', error);
-      res.status(500).send('Error interno del servidor al guardar la configuración.');
-      // Maneja el error según tus necesidades
+      console.error('Error updating container configuration:', error);
+      res.status(500).send('Internal server error while saving the configuration.');
+      // Handle the error according to your needs
       throw error;
     } 
   } else {
-    res.status(400).send('Solicitud incorrecta: Propiedad "enabled" no encontrada en la solicitud.');
+    res.status(400).send('Bad request: "enabled" property not found in the request.');
   }
 });
 
 app.post('/changeContainerEnable/:id', (req, res) => {
   const {id} = req.params
 
-  // leo el fichero
+  // Read the file
   const configFile = 'src/containers.json';
   const response = JSON.parse(fs.readFileSync(configFile, 'utf8'));
   const containerIndex = response.containers.findIndex((container: Container) => container.id === id);
@@ -79,13 +79,13 @@ app.post('/changeContainerEnable/:id', (req, res) => {
     response.containers[containerIndex].enabled = !response.containers[containerIndex].enabled;
     try {
       fs.writeFileSync(configFile, JSON.stringify(response, null, 2));
-      res.status(200).send('Configuración guardada correctamente.');
+      res.status(200).send('Configuration saved successfully.');
     } catch (error) {
-        console.error('Error al escribir en el archivo:', error);
-        res.status(500).send('Error interno del servidor al guardar la configuración.');
+      console.error('Error writing to the file:', error);
+      res.status(500).send('Internal server error while saving the configuration.');
     }
   } else {
-    res.status(404).send('Contenedor no encontrado.');
+    res.status(404).send('Container not found.');
   }
   
 })
@@ -98,8 +98,8 @@ app.get('/getStatus', async (req, res) => {
     }));
     res.json(statuses);
   } catch (error) {
-    console.error('Error al obtener procesos:', error);
-    res.status(500).json({ error: 'Error al obtener procesos.' });
+    console.error('Error getting processes:', error);
+    res.status(500).json({ error: 'Error getting processes.' });
   }
 })
 app.get('/getSatus/:id', async (req, res) => {  //get status for each container
@@ -111,12 +111,12 @@ app.get('/getSatus/:id', async (req, res) => {  //get status for each container
     if (container) {
       res.json(container.status);
     } else {
-        console.log(`No se encontró un contenedor con el ID '${id}'.`);
-        res.status(404).send('Estado no encontrado.');
-      }
+      console.log(`Container with ID '${id}' not found.`);
+      res.status(404).send('Status not found.');
+    }
   } catch(error) {
-    console.error('Error al leer el archivo de configuración:', error);
-    res.status(500).json({ error: 'Error al obtener procesos.' });
+    console.error('Error reading the configuration file:', error);
+    res.status(500).json({ error: 'Error getting processes.' });
   }
 })
 app.get('/getSaved/:id', async (req, res) => {
@@ -128,12 +128,12 @@ app.get('/getSaved/:id', async (req, res) => {
     if (container) {
       res.json(container.enabled);
     } else {
-        console.log(`No se encontró un contenedor con el ID '${id}'.`);
-        res.status(404).send('Estado no encontrado.');
+        console.log(`Container with ID '${id}' not found.`);
+        res.status(404).send('Status not found.');
       }
   } catch(error) {
-    console.error('Error al leer el archivo de configuración:', error);
-    res.status(500).json({ error: 'Error al obtener procesos.' });
+    console.error('Error reading the configuration file:', error);
+    res.status(500).json({ error: 'Error getting processes.' });
   }
     
 });
@@ -142,19 +142,16 @@ app.get('/getEnableds', async (req, res) => {
   const configFile = 'src/containers.json';
 
     try {
-        // Carga el archivo JSON y conviértelo en un array de objetos Container
-        let fileData: { containers: Container[] } = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+      // Loads the JSON file and convert it to an array of Container objects
+      let fileData: { containers: Container[] } = JSON.parse(fs.readFileSync(configFile, 'utf8'));
 
-        // Verifica si todos los contenedores tienen el campo 'enabled' configurado como true
-        const allEnabled = fileData.containers.every(container => container.enabled);
+      // Checks if all containers have the 'enabled' field set to true
+      const allEnabled = fileData.containers.every(container => container.enabled);
 
-        res.json(allEnabled);
-        /* if(allEnabled) {
-          res.json(await pm2Lib.stopProcess(filename));
-        } */
+      res.json(allEnabled);
     } catch (error) {
-        console.error('Error al leer el archivo de configuración:', error);
-        res.status(500).json({ error: 'Error al obtener enabled.' });
+      console.error('Error reading configuration file:', error);
+      res.status(500).json({ error: 'Error retrieving processes.' });
     }
 })
 
@@ -174,13 +171,13 @@ app.post('/changeContainerState/:id', (req, res) => {
     }
     try {
       fs.writeFileSync(configFile, JSON.stringify(response, null, 2));
-      res.status(200).send('Configuración guardada correctamente.');
+      res.status(200).send('Configuration saved successfully.');
     } catch (error) {
-        console.error('Error al escribir en el archivo:', error);
-        res.status(500).send('Error interno del servidor al guardar la configuración.');
+      console.error('Error writing to file:', error);
+      res.status(500).send('Internal server error while saving configuration.');
     }
   } else {
-    res.status(404).send('Contenedor no encontrado.');
+    res.status(404).send('Container not found.');
   }
   
 })
