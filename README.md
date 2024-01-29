@@ -24,8 +24,8 @@ Before running this application, ensure that the following dependencies are inst
 1. Clone this repository:
 
     ```bash
-    git clone <repository_url>
-    cd <project_directory>
+    git clone https://github.com/RogerOrRobert/Keep-Alive-Project.git
+    cd Keep-Alive-Project
     ```
 
 2. Install dependencies:
