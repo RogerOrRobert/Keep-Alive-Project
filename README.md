@@ -42,7 +42,7 @@ Before running this application, ensure that the following dependencies are inst
 
 ## Usage
 
-Access the web interface by navigating to `http://localhost:<PORT>` in your web browser, where `<PORT>` is the specified port in your pm2 ecosystem configuration.
+Access the web interface by navigating to `http://localhost:<PORT>` in your web browser, where `<PORT>` is the specified port in the pm2 ecosystem configuration.
 
 The interface displays a table with information about each container and miner. You can perform various actions, such as starting, stopping, and restarting containers. Additionally, you can save the current configuration and enable/disable individual containers.
 
