@@ -109,22 +109,22 @@ var Pm2Lib = /** @class */ (function () {
                 try {
                     fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
                     existingContainerIndex = fileData.containers.findIndex(function (container) { return container.id === id; });
-                    // Si el ID ya existe, no hagas ninguna escritura adicional y devuelve el resultado de pm2.start
+                    // If ID already exists, don't perform any additional writing and return the result of pm2.start
                     if (existingContainerIndex !== -1) {
-                        console.log('El ID ya existe en la lista de contenedores. No se realizaron cambios.');
+                        console.log('ID already exists in the list of containers. No changes were made.');
                         return [2 /*return*/, (0, util_1.promisify)(pm2.start).call(pm2, proc)];
                     }
-                    // El ID no existe en la lista, agrégalo
-                    fileData.containers.push({ id: id, enabled: false, status: "online" }); // O establece el valor según tus necesidades
-                    // Guarda los cambios de vuelta al archivo JSON
+                    // ID does not exist in the list, add it
+                    fileData.containers.push({ id: id, enabled: false, status: "online" }); // Or set the value according to your needs
+                    // Save the changes back to the JSON file
                     fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
-                    console.log('Configuración de contenedores actualizada correctamente.');
-                    // Procede a iniciar el proceso
+                    console.log('Container configuration updated successfully.');
+                    // Proceed to start the process
                     return [2 /*return*/, (0, util_1.promisify)(pm2.start).call(pm2, proc)];
                 }
                 catch (error) {
-                    console.error('Error al actualizar la configuración de contenedores:', error);
-                    // Maneja el error según tus necesidades
+                    console.error('Error updating container configuration:', error);
+                    // Handle the error according to your needs
                     throw error;
                 }
                 return [2 /*return*/];
@@ -147,23 +147,23 @@ var Pm2Lib = /** @class */ (function () {
                 try {
                     fileData = JSON.parse(fs.readFileSync(configFile, 'utf8'));
                     existingContainerIndex = fileData.containers.findIndex(function (container) { return container.id === filename; });
-                    // Si el ID ya existe, no hagas ninguna escritura adicional y devuelve el resultado de pm2.start
+                    // If ID already exists, don't perform any additional writing and return the result of pm2.stop
                     if (existingContainerIndex !== -1) {
-                        console.log('El ID ya existe en la lista de contenedores. No se realizaron cambios.');
+                        console.log('ID already exists in the list of containers. No changes were made.');
                         return [2 /*return*/, (0, util_1.promisify)(pm2.stop).call(pm2, filename)];
                     }
                     id = filename;
-                    // El ID no existe en la lista, agrégalo
-                    fileData.containers.push({ id: id, enabled: false, status: "stopped" }); // O establece el valor según tus necesidades
-                    // Guarda los cambios de vuelta al archivo JSON
+                    // ID does not exist in the list, add it
+                    fileData.containers.push({ id: id, enabled: false, status: "stopped" }); // Or set the value according to your needs
+                    // Save the changes back to the JSON file
                     fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
-                    console.log('Configuración de contenedores actualizada correctamente.');
-                    // Procede a iniciar el proceso
+                    console.log('Container configuration updated successfully.');
+                    // Proceed to stop the process
                     return [2 /*return*/, (0, util_1.promisify)(pm2.stop).call(pm2, filename)];
                 }
                 catch (error) {
-                    console.error('Error al actualizar la configuración de contenedores:', error);
-                    // Maneja el error según tus necesidades
+                    console.error('Error updating container configuration:', error);
+                    // Handle the error according to your needs
                     throw error;
                 }
                 return [2 /*return*/];
