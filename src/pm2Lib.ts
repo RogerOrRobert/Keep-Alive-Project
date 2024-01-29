@@ -47,81 +47,82 @@ class Pm2Lib {
 
     return processes;
   }
-    async onLogOut(onLog: (logObj: IProcessOutLog) => void) {
-        if (!this.bus) {
-            this.bus = await promisify<EventEmitter>(pm2.launchBus).call(pm2)
-        }
-        this.bus.on('log:out', (procLog: IProcessOutLog) => {
-            onLog(procLog);
-        });
+
+  async onLogOut(onLog: (logObj: IProcessOutLog) => void) {
+    if (!this.bus) {
+      this.bus = await promisify<EventEmitter>(pm2.launchBus).call(pm2);
     }
-    async startProcess(id: string): Promise<Proc> {
-      const proc = this.getStartOptions(id);
-      const configFile = 'src/containers.json';
-      try {
-          // Carga el archivo JSON y conviértelo en un array de objetos Container
-          let fileData: { containers: Container[] } = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-  
-          // Verifica si el ID ya existe en la lista de contenedores
-          const existingContainerIndex = fileData.containers.findIndex(container => container.id === id);
-  
-          // Si el ID ya existe, no hagas ninguna escritura adicional y devuelve el resultado de pm2.start
-          if (existingContainerIndex !== -1) {
-              console.log('El ID ya existe en la lista de contenedores. No se realizaron cambios.');
-              return promisify<StartOptions, Proc>(pm2.start).call(pm2, proc);
-          }
-          
-          // El ID no existe en la lista, agrégalo
-          fileData.containers.push({ id, enabled: false, status: "online" }); // O establece el valor según tus necesidades
-  
-          // Guarda los cambios de vuelta al archivo JSON
-          fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
-          console.log('Configuración de contenedores actualizada correctamente.');
-  
-          // Procede a iniciar el proceso
-          return promisify<StartOptions, Proc>(pm2.start).call(pm2, proc);
-      } catch (error) {
-          console.error('Error al actualizar la configuración de contenedores:', error);
-          // Maneja el error según tus necesidades
-          throw error;
-      }
+    this.bus.on('log:out', (procLog: IProcessOutLog) => {
+      onLog(procLog);
+    });
   }
-  
+
+  async startProcess(id: string): Promise<Proc> {
+    const proc = this.getStartOptions(id);
+    const configFile = 'src/containers.json';
+    try {
+      // Load the JSON file and convert it into an array of Container objects
+      let fileData: { containers: Container[] } = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+
+      // Check if the ID already exists in the list of containers
+      const existingContainerIndex = fileData.containers.findIndex(container => container.id === id);
+
+      // If the ID already exists, do not perform any additional writing and return the result of pm2.start
+      if (existingContainerIndex !== -1) {
+        console.log('ID already exists in the list of containers. No changes were made.');
+        return promisify<StartOptions, Proc>(pm2.start).call(pm2, proc);
+      }
+
+      // The ID does not exist in the list, add it
+      fileData.containers.push({ id, enabled: false, status: "online" });
+
+      // Save the changes back to the JSON file
+      fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
+      console.log('Container configuration updated successfully.');
+
+      // Proceed to start the process
+      return promisify<StartOptions, Proc>(pm2.start).call(pm2, proc);
+    } catch (error) {
+      console.error('Error updating container configuration:', error);
+      // Handle the error as needed
+      throw error;
+    }
+  }
+
   async restartProcess(filename: string): Promise<Proc> {
     return promisify(pm2.restart).call(pm2, filename);
   }
 
   async stopProcess(filename: string): Promise<Proc> {
     const proc = this.getStartOptions(filename);
-      const configFile = 'src/containers.json';
-      try {
-          // Carga el archivo JSON y conviértelo en un array de objetos Container
-          let fileData: { containers: Container[] } = JSON.parse(fs.readFileSync(configFile, 'utf8'));
-  
-          // Verifica si el ID ya existe en la lista de contenedores
-          const existingContainerIndex = fileData.containers.findIndex(container => container.id === filename);
-  
-          // Si el ID ya existe, no hagas ninguna escritura adicional y devuelve el resultado de pm2.start
-          if (existingContainerIndex !== -1) {
-              console.log('El ID ya existe en la lista de contenedores. No se realizaron cambios.');
-              return promisify(pm2.stop).call(pm2, filename);
-          }
-          const id = filename;
-          // El ID no existe en la lista, agrégalo
-          fileData.containers.push({ id, enabled: false, status: "stopped" }); // O establece el valor según tus necesidades
-  
-          // Guarda los cambios de vuelta al archivo JSON
-          fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
-          console.log('Configuración de contenedores actualizada correctamente.');
-  
-          // Procede a iniciar el proceso
-          return promisify(pm2.stop).call(pm2, filename);
-      } catch (error) {
-          console.error('Error al actualizar la configuración de contenedores:', error);
-          // Maneja el error según tus necesidades
-          throw error;
+    const configFile = 'src/containers.json';
+    try {
+      // Load the JSON file and convert it into an array of Container objects
+      let fileData: { containers: Container[] } = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+
+      // Check if the ID already exists in the list of containers
+      const existingContainerIndex = fileData.containers.findIndex(container => container.id === filename);
+
+      // If the ID already exists, do not perform any additional writing and return the result of pm2.start
+      if (existingContainerIndex !== -1) {
+        console.log('ID already exists in the list of containers. No changes were made.');
+        return promisify(pm2.stop).call(pm2, filename);
       }
-    
+      const id = filename;
+      // The ID does not exist in the list, add it
+      fileData.containers.push({ id, enabled: false, status: "stopped" });
+
+      // Save the changes back to the JSON file
+      fs.writeFileSync(configFile, JSON.stringify(fileData, null, 2));
+      console.log('Container configuration updated successfully.');
+
+      // Proceed to start the process
+      return promisify(pm2.stop).call(pm2, filename);
+    } catch (error) {
+      console.error('Error updating container configuration:', error);
+      // Handle the error as needed
+      throw error;
+    }
   }
 
   private getStartOptions(filename: string): StartOptions {
